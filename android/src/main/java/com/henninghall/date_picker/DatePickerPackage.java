@@ -56,7 +56,9 @@ public class DatePickerPackage extends TurboReactPackage implements ReactPackage
 
     @Override
     public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
-        context = reactContext;
+        if (context == null) {
+            context = reactContext;
+        }
         return Arrays.<ViewManager> asList(
                 new DatePickerManager()
         );

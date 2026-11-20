@@ -18,6 +18,7 @@ import com.facebook.react.bridge.Dynamic;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
+import com.facebook.react.bridge.UiThreadUtil;
 import com.henninghall.date_picker.ui.SpinnerState;
 import com.henninghall.date_picker.ui.SpinnerStateListener;
 
@@ -49,8 +50,12 @@ public class DatePickerModuleImpl {
         return reactContext != null ? reactContext.getCurrentActivity() : null;
     }
 
-    public void openPicker(ReadableMap props){
-        Activity activity = getCurrentActivity();
+    public void openPicker(final ReadableMap props){
+        ReactApplicationContext reactContext = getReactContext();
+        if (reactContext != null) {
+            DatePickerPackage.context = reactContext;
+        }
+        final Activity activity = getCurrentActivity();
         if (activity == null) {
             if (props != null && props.hasKey("id")) {
                 Emitter.onCancel(props.getString("id"));
@@ -58,29 +63,39 @@ public class DatePickerModuleImpl {
             return;
         }
 
-        final PickerView picker = createPicker(props);
-        Callback onConfirm = new Callback() {
+        UiThreadUtil.runOnUiThread(new Runnable() {
             @Override
-            public void invoke(Object... objects) {
-                Emitter.onConfirm(picker.getDate(), picker.getPickerId());
-            }
-        };
+            public void run() {
+                final PickerView picker = createPicker(props);
+                Callback onConfirm = new Callback() {
+                    @Override
+                    public void invoke(Object... objects) {
+                        Emitter.onConfirm(picker.getDate(), picker.getPickerId());
+                    }
+                };
 
-        Callback onCancel = new Callback() {
-            @Override
-            public void invoke(Object... objects) {
-                Emitter.onCancel(picker.getPickerId());
-            }
-        };
+                Callback onCancel = new Callback() {
+                    @Override
+                    public void invoke(Object... objects) {
+                        Emitter.onCancel(picker.getPickerId());
+                    }
+                };
 
-        dialog = createDialog(activity, props, picker, onConfirm, onCancel);
-        dialog.show();
+                dialog = createDialog(activity, props, picker, onConfirm, onCancel);
+                dialog.show();
+            }
+        });
     }
 
     public void closePicker(){
-        if (dialog != null) {
-            dialog.dismiss();
-        }
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (dialog != null && dialog.isShowing()) {
+                    dialog.dismiss();
+                }
+            }
+        });
     }
 
     private AlertDialog createDialog(
