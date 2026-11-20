@@ -1,6 +1,7 @@
 package com.henninghall.date_picker;
 
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -14,6 +15,7 @@ import android.widget.TextView;
 
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.Dynamic;
+import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.henninghall.date_picker.ui.SpinnerState;
@@ -24,13 +26,38 @@ import net.time4j.android.ApplicationStarter;
 public class DatePickerModuleImpl {
 
     public static final String NAME = "RNDatePicker";
+    private final Context context;
     private AlertDialog dialog;
 
     DatePickerModuleImpl(Context context) {
+        this.context = context;
+        if (context instanceof ReactApplicationContext) {
+            DatePickerPackage.context = (ReactApplicationContext) context;
+        }
         ApplicationStarter.initialize(context, false); // false = no need to prefetch on time data background tread
     }
 
+    private ReactApplicationContext getReactContext() {
+        if (context instanceof ReactApplicationContext) {
+            return (ReactApplicationContext) context;
+        }
+        return DatePickerPackage.context;
+    }
+
+    private Activity getCurrentActivity() {
+        ReactApplicationContext reactContext = getReactContext();
+        return reactContext != null ? reactContext.getCurrentActivity() : null;
+    }
+
     public void openPicker(ReadableMap props){
+        Activity activity = getCurrentActivity();
+        if (activity == null) {
+            if (props != null && props.hasKey("id")) {
+                Emitter.onCancel(props.getString("id"));
+            }
+            return;
+        }
+
         final PickerView picker = createPicker(props);
         Callback onConfirm = new Callback() {
             @Override
@@ -46,22 +73,24 @@ public class DatePickerModuleImpl {
             }
         };
 
-        dialog = createDialog(props, picker, onConfirm, onCancel);
+        dialog = createDialog(activity, props, picker, onConfirm, onCancel);
         dialog.show();
     }
 
     public void closePicker(){
-        dialog.dismiss();
+        if (dialog != null) {
+            dialog.dismiss();
+        }
     }
 
     private AlertDialog createDialog(
-            ReadableMap props, final PickerView picker, final Callback onConfirm, final Callback onCancel) {
+            Activity activity, ReadableMap props, final PickerView picker, final Callback onConfirm, final Callback onCancel) {
         String confirmText = props.getString("confirmText");
         final String cancelText = props.getString("cancelText");
         final String buttonColor = props.getString("buttonColor");
         final View pickerWithMargin = withTopMargin(picker);
 
-        AlertDialog dialog = new AlertDialogBuilder(DatePickerPackage.context.getCurrentActivity(), getTheme(props))
+        AlertDialog dialog = new AlertDialogBuilder(activity, getTheme(props))
                 .setColoredTitle(props)
                 .setCancelable(true)
                 .setView(pickerWithMargin)
@@ -116,7 +145,7 @@ public class DatePickerModuleImpl {
         LinearLayout.LayoutParams rootLayoutParams = new LinearLayout.LayoutParams(
                 RelativeLayout.LayoutParams.MATCH_PARENT,
                 Utils.toDp(height));
-        PickerView picker = new PickerView(rootLayoutParams);
+        PickerView picker = new PickerView(context, rootLayoutParams);
         ReadableMapKeySetIterator iterator = props.keySetIterator();
         while(iterator.hasNextKey()){
             String key = iterator.nextKey();
@@ -142,11 +171,13 @@ public class DatePickerModuleImpl {
     }
 
     private void setEnabledConfirmButton(boolean enabled) {
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(enabled);
+        if (dialog != null && dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(enabled);
+        }
     }
 
     private View withTopMargin(PickerView view) {
-        LinearLayout linearLayout = new LinearLayout(DatePickerPackage.context);
+        LinearLayout linearLayout = new LinearLayout(context);
         linearLayout.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -157,8 +188,11 @@ public class DatePickerModuleImpl {
     }
 
     static class AlertDialogBuilder extends AlertDialog.Builder {
+        private final Context dialogContext;
+
         public AlertDialogBuilder(Context context, int themeResId) {
             super(context, themeResId);
+            this.dialogContext = context;
         }
         public AlertDialogBuilder setColoredTitle(ReadableMap props){
             String textColor = props.getString("textColor");
@@ -167,12 +201,12 @@ public class DatePickerModuleImpl {
                 this.setTitle(title);
                 return this;
             }
-            TextView coloredTitle = new TextView(DatePickerPackage.context.getCurrentActivity());
+            TextView coloredTitle = new TextView(dialogContext);
             coloredTitle.setText(title);
             TypedValue typedValue = new TypedValue();
-            Resources.Theme theme = DatePickerPackage.context.getCurrentActivity().getTheme();
+            Resources.Theme theme = dialogContext.getTheme();
             theme.resolveAttribute(android.R.attr.dialogPreferredPadding, typedValue, true);
-            int paddingInPixels = TypedValue.complexToDimensionPixelSize(typedValue.data, DatePickerPackage.context.getResources().getDisplayMetrics());
+            int paddingInPixels = TypedValue.complexToDimensionPixelSize(typedValue.data, dialogContext.getResources().getDisplayMetrics());
             coloredTitle.setPadding(paddingInPixels, paddingInPixels, paddingInPixels, 0);
             coloredTitle.setTextSize(20F);
             int color = Color.parseColor(textColor);

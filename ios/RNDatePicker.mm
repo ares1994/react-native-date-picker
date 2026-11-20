@@ -97,6 +97,21 @@ RCT_NOT_IMPLEMENTED(- (instancetype)initWithCoder:(NSCoder *)aDecoder)
     [super setContentView:_picker];
 }
 
+- (void)setDate:(NSDate *)date
+{
+    [_picker setDate:date];
+}
+
+- (void)setMinimumDate:(NSDate *)date
+{
+    [_picker setMinimumDate:date];
+}
+
+- (void)setMaximumDate:(NSDate *)date
+{
+    [_picker setMaximumDate:date];
+}
+
 - (void)updateProps:(Props::Shared const &)props oldProps:(Props::Shared const &)oldProps
 {
     const auto &oldViewProps = *std::static_pointer_cast<RNDatePickerProps const>(oldProps ? oldProps : _props); //_props equ

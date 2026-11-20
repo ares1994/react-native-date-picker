@@ -18,8 +18,15 @@ import java.util.List;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 public class Accessibility {
-    private final static AccessibilityManager systemManager = (AccessibilityManager) DatePickerPackage.context
-            .getApplicationContext().getSystemService(Context.ACCESSIBILITY_SERVICE);
+    private static AccessibilityManager systemManager;
+
+    private static AccessibilityManager getSystemManager() {
+        if (systemManager == null && DatePickerPackage.context != null) {
+            systemManager = (AccessibilityManager) DatePickerPackage.context
+                    .getApplicationContext().getSystemService(Context.ACCESSIBILITY_SERVICE);
+        }
+        return systemManager;
+    }
 
     private static Locale mLocale = Locale.getDefault();
 
@@ -39,8 +46,9 @@ public class Accessibility {
      * time. Following code aims to fix this issue.
      */
     public static boolean shouldAllowScroll(View view) {
+        AccessibilityManager manager = getSystemManager();
         // If TalkBack isn't active, always proceed without suppressing touch events
-        if (!systemManager.isTouchExplorationEnabled()) {
+        if (manager == null || !manager.isTouchExplorationEnabled()) {
             return true;
         }
         if (Build.VERSION.SDK_INT >= 21) {
@@ -83,11 +91,12 @@ public class Accessibility {
     }
 
     public static boolean isAccessibilityEnabled() {
-        if (systemManager == null) {
+        AccessibilityManager manager = getSystemManager();
+        if (manager == null) {
             return false;
         }
 
-        return systemManager.isEnabled();
+        return manager.isEnabled();
     }
 
     /**
@@ -101,7 +110,11 @@ public class Accessibility {
      * Get a list of accessibility services currently active
      */
     private static boolean hasAccessibilityFeatureTypeEnabled(int type) {
-        List<AccessibilityServiceInfo> enabledServices = systemManager.getEnabledAccessibilityServiceList(type);
+        AccessibilityManager manager = getSystemManager();
+        if (manager == null) {
+            return false;
+        }
+        List<AccessibilityServiceInfo> enabledServices = manager.getEnabledAccessibilityServiceList(type);
 
         return enabledServices != null && enabledServices.size() > 0;
     }
@@ -170,10 +183,11 @@ public class Accessibility {
     }
 
     public static void sendEvent(AccessibilityEvent event) {
-        if (systemManager == null || !systemManager.isEnabled()) {
+        AccessibilityManager manager = getSystemManager();
+        if (manager == null || !manager.isEnabled()) {
             return;
         }
-        systemManager.sendAccessibilityEvent(event);
+        manager.sendAccessibilityEvent(event);
     }
 
     /**

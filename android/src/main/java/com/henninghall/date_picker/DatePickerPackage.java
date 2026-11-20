@@ -65,6 +65,7 @@ public class DatePickerPackage extends TurboReactPackage implements ReactPackage
     @Override
     public List<NativeModule> createNativeModules(
             ReactApplicationContext reactContext) {
+        context = reactContext;
         List<NativeModule> modules = new ArrayList<>();
         modules.add(new DatePickerModule(reactContext));
         return modules;

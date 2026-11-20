@@ -8,6 +8,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface RNDatePicker : RCTViewComponentView
 
+- (void)setDate:(NSDate *)date;
+- (void)setMinimumDate:(NSDate *)date;
+- (void)setMaximumDate:(NSDate *)date;
+
 @end
 
 NS_ASSUME_NONNULL_END

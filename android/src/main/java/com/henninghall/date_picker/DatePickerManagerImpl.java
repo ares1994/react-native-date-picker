@@ -24,10 +24,16 @@ public class DatePickerManagerImpl {
   }
 
   public static PickerView createViewInstance(ThemedReactContext context) {
-    return new PickerView(new LinearLayout.LayoutParams(
-            RelativeLayout.LayoutParams.MATCH_PARENT,
-            RelativeLayout.LayoutParams.MATCH_PARENT
-    ));
+    if (context != null && context.getReactApplicationContext() != null) {
+      DatePickerPackage.context = context.getReactApplicationContext();
+    }
+    return new PickerView(
+            context,
+            new LinearLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.MATCH_PARENT,
+                    RelativeLayout.LayoutParams.MATCH_PARENT
+            )
+    );
   }
 
   public static void setProps(PickerView view, int index, Dynamic value, Class<? extends com.henninghall.date_picker.DatePickerManager> aClass) {

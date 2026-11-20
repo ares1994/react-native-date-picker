@@ -1,5 +1,6 @@
 package com.henninghall.date_picker;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -28,10 +29,10 @@ public class PickerView extends RelativeLayout {
     private State state = new State();
     private ArrayList<String> updatedProps = new ArrayList<>();
 
-    public PickerView(ViewGroup.LayoutParams layoutParams) {
-        super(DatePickerPackage.context);
+    public PickerView(Context context, ViewGroup.LayoutParams layoutParams) {
+        super(context);
         LinearLayout layout = new LinearLayout(getContext());
-        LayoutInflater.from(getContext()).inflate(state.derived.getRootLayout(), layout);
+        LayoutInflater.from(context).inflate(state.derived.getRootLayout(), layout);
         this.addView(layout, layoutParams);
         uiManager = new UIManager(state, this);
     }

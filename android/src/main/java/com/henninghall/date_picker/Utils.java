@@ -21,6 +21,7 @@ import java.util.TimeZone;
 public class Utils {
 
     public static boolean deviceUsesAmPm(){
+        if (DatePickerPackage.context == null) return false;
         return !DateFormat.is24HourFormat(DatePickerPackage.context);
     }
 
@@ -103,12 +104,14 @@ public class Utils {
 
     public static String getLocalisedStringFromResources(Locale locale, String tagName) {
         ReactApplicationContext context = DatePickerPackage.context;
+        if (context == null) return "";
         int selectedKey = context.getResources().getIdentifier(tagName,"string", context.getPackageName());
         String localisedText = LocaleUtils.getLocaleStringResource(locale, selectedKey, context);
         return localisedText;
     }
 
     public static int toDp(int pixels){
+        if (DatePickerPackage.context == null) return pixels;
         return (int) (pixels * DatePickerPackage.context.getResources().getDisplayMetrics().density);
     }
 
